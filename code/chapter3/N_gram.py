@@ -12,6 +12,18 @@ print(f"第一步: P(datawhale) = {count_datawhale}/{total_tokens} = {p_datawhal
 
 # --- 第二步：计算 P(agent|datawhale) ---
 # 先计算 bigrams 用于后续步骤
+
+"""
+zip 会按位置一一配对：
+(tokens[0], tokens[1]) -> ("datawhale", "agent")
+(tokens[1], tokens[2]) -> ("agent", "learns")
+(tokens[2], tokens[3]) -> ("learns", "datawhale")
+这正好就是 2-gram（相邻二元组）。
+collections.Counter(bigrams)：统计每个 bigram 出现几次
+例如 bigram_counts[('datawhale', 'agent')] == 2
+tokens.count('datawhale')：统计单词 datawhale 出现几次（分母常用）
+"""
+
 bigrams = zip(tokens, tokens[1:])
 bigram_counts = collections.Counter(bigrams)
 count_datawhale_agent = bigram_counts[('datawhale', 'agent')]

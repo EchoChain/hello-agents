@@ -21,7 +21,7 @@ def merge_vocab(pair, v_in):
 
 # 准备语料库，每个词末尾加上</w>表示结束，并切分好字符
 vocab = {'h u g </w>': 1, 'p u g </w>': 1, 'p u n </w>': 1, 'b u n </w>': 1}
-num_merges = 4 # 设置合并次数
+num_merges =  4 # 设置合并次数
 
 for i in range(num_merges):
     pairs = get_stats(vocab)
