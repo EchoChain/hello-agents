@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from typing import List, Dict
 
 # 加载 .env 文件中的环境变量
+# 如果系统配置环境变量，则系统环境变量优先。对缺省值加载 .env 中的环境变量。
 load_dotenv()
 
 class HelloAgentsLLM:
@@ -25,12 +26,21 @@ class HelloAgentsLLM:
 
         self.client = OpenAI(api_key=apiKey, base_url=baseUrl, timeout=timeout)
 
+    # 参数形如 messages = [{"role": "user", "content": prompt}]
+    # 类型为 List<Map<String, String>>
     def think(self, messages: List[Dict[str, str]], temperature: float = 0) -> str:
         """
         调用大语言模型进行思考，并返回其响应。
         """
         print(f"🧠 正在调用 {self.model} 模型...")
         try:
+            # think() 的流式执行，本质是“服务端分片返回 + 客户端迭代消费”。
+            # self.client.chat.completions.create(..., stream=True) 打开流式模式
+            # 此时 response 不是一次性完整结果，而是一个可迭代的流（chunk 序列）
+            # for chunk in response: 每次拿到一个增量片段
+            # chunk.choices[0].delta.content 取到当前这片新增文本
+            # 本地立即 print(content, end="", flush=True)，所以你会看到“字/词”不断冒出来
+            # 同时把每片内容 append 到 collected_content，最后 return "".join(collected_content) 作为完整字符串返回
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
