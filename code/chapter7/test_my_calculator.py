@@ -20,8 +20,10 @@ def test_calculator_tool():
         "5 * 6",           # 基本乘法
         "15 / 3",          # 基本除法
         "sqrt(16)",        # 平方根
+        "cyh(10.5)"        # 自定义
     ]
 
+    # i 从 1 开始
     for i, expression in enumerate(test_cases, 1):
         print(f"测试 {i}: {expression}")
         result = registry.execute_tool("my_calculator", expression)
@@ -61,4 +63,4 @@ def test_with_simple_agent():
 
 if __name__ == "__main__":
     test_calculator_tool()
-    test_with_simple_agent()
+    # test_with_simple_agent()

@@ -19,6 +19,7 @@ def my_calculate(expression: str) -> str:
 
     # 支持的基本函数
     functions = {
+        'cyh': math.ceil,
         'sqrt': math.sqrt,
         'pi': math.pi,
     }

@@ -32,15 +32,19 @@ class MySimpleAgent(SimpleAgent):
         # 构建消息列表
         messages = []
 
-        # 添加系统消息（可能包含工具信息）
+        '''
+        系统提示词不在 history 中，只是在每次对话被拼进 message[]
+        history只保存用户对话
+        '''
+        # PART1: 添加系统消息（可能包含工具信息）
         enhanced_system_prompt = self._get_enhanced_system_prompt()
         messages.append({"role": "system", "content": enhanced_system_prompt})
 
-        # 添加历史消息
+        # PART2: 添加历史消息
         for msg in self._history:
             messages.append({"role": msg.role, "content": msg.content})
 
-        # 添加当前用户消息
+        # PART3: 添加当前用户消息
         messages.append({"role": "user", "content": input_text})
 
         # 如果没有启用工具调用，使用简单对话逻辑
@@ -51,7 +55,7 @@ class MySimpleAgent(SimpleAgent):
             print(f"✅ {self.name} 响应完成")
             return response
 
-        # 支持多轮工具调用的逻辑
+        # PART4: 支持多轮工具调用的逻辑
         return self._run_with_tools(messages, input_text, max_tool_iterations, **kwargs)
 
     def _get_enhanced_system_prompt(self) -> str:
@@ -96,6 +100,35 @@ class MySimpleAgent(SimpleAgent):
                 tool_results = []
                 clean_response = response
 
+                """                
+                    这句
+                    replace(...)
+                    在干嘛？
+                    call['original']
+                    是解析出来的原始片段，比如：[TOOL_CALL: weather:北京]
+                    clean_response.replace(..., "")
+                    的意思是：把这个片段替换为空字符串（等于删除）
+                    循环完所有
+                    tool_calls
+                    后，clean_response
+                    就只剩普通文字
+
+                    效果示例
+                    1（单工具调用）
+                    原始
+                    response：
+                    我先查一下资料。[TOOL_CALL: search:Python协程] 请稍等。
+                    循环后
+                    clean_response：
+                    我先查一下资料。 请稍等。
+                    然后代码会把它放进：
+                    messages.append({"role": "assistant", "content": clean_response})
+                    这样上下文里
+                    assistant
+                    说的是“我先查一下资料。请稍等。”，而不是把[TOOL_CALL:...]
+                    这种控制标记也当自然语言对话存进去。
+                """
+
                 for call in tool_calls:
                     result = self._execute_tool_call(call['tool_name'], call['parameters'])
                     tool_results.append(result)
@@ -120,6 +153,11 @@ class MySimpleAgent(SimpleAgent):
         if current_iteration >= max_tool_iterations and not final_response:
             final_response = self.llm.invoke(messages, **kwargs)
 
+        '''
+        中间工具调用的的对话只存在于临时message[]中，不保存到 history 。
+        history 只有用户的问答
+        '''
+
         # 保存到历史记录
         self.add_message(Message(input_text, "user"))
         self.add_message(Message(final_response, "assistant"))
@@ -142,6 +180,7 @@ class MySimpleAgent(SimpleAgent):
 
         return tool_calls
 
+    # TODO 工具调用链路
     def _execute_tool_call(self, tool_name: str, parameters: str) -> str:
         """执行工具调用"""
         if not self.tool_registry:
@@ -224,6 +263,7 @@ class MySimpleAgent(SimpleAgent):
         self.add_message(Message(full_response, "assistant"))
         print(f"✅ {self.name} 流式响应完成")
 
+    # TODO 工具调用链路
     def add_tool(self, tool) -> None:
         """添加工具到Agent（便利方法）"""
         if not self.tool_registry:

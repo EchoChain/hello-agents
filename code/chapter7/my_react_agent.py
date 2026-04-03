@@ -45,7 +45,7 @@ class MyReActAgent(ReActAgent):
         max_steps: int = 5,
         custom_prompt: Optional[str] = None
     ):
-        super().__init__(name, llm, system_prompt, config)
+        super().__init__(name=name, llm=llm, system_prompt=system_prompt, config=config)
         self.tool_registry = tool_registry
         self.max_steps = max_steps
         self.current_history: List[str] = []
@@ -63,6 +63,10 @@ class MyReActAgent(ReActAgent):
             current_step += 1
             print(f"\n--- 第 {current_step} 步 ---")
 
+            '''
+            为什么系统提示词不在history中，而要每次对话拼接？
+            对于 {question} {history} 等替换项，当然要每次对话都替换成最新的
+            '''
             # 1. 构建提示词
             tools_desc = self.tool_registry.get_tools_description()
             history_str = "\n".join(self.current_history)
@@ -79,6 +83,10 @@ class MyReActAgent(ReActAgent):
             # 3. 解析输出
             thought, action = self._parse_output(response_text)
 
+            '''
+            中间 ReAct 过程的 [{Thought, Action}...] 只存在于临时记忆 message[] 中
+            history 中只有 [{user:input}, {ai:final_output}]
+            '''
             # 4. 检查完成条件
             if action and action.startswith("Finish"):
                 final_answer = self._parse_action_input(action)
